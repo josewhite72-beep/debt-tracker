@@ -16,6 +16,11 @@ const btnClearCache = document.getElementById('btn-clear-cache');
 const repeatsSelect = document.getElementById('repeats');
 const customDaysField = document.getElementById('custom-days-field');
 const dayPicker = document.getElementById('day-picker');
+const submitBtn = document.getElementById('submit-btn');
+const cancelEditBtn = document.getElementById('cancel-edit-btn');
+
+// id de la deuda que se está editando actualmente (null = modo "agregar")
+let editingId = null;
 
 // --- SELECTOR DE DÍAS FIJOS (para recurrencia "custom-days") ---
 // El usuario elige libremente cualquier combinación de días del mes
@@ -182,11 +187,13 @@ function render() {
             <div class="row-amount">
                 <span class="amount">$${debt.amount.toFixed(2)}</span>
                 <div class="row-actions">
+                    <button class="link-edit" onclick="editDebt('${debt.id}')">Editar</button>
                     <button class="link-pay" onclick="togglePaid('${debt.id}')">${isPaid ? 'Undo' : 'Mark paid'}</button>
                     <button class="link-del" onclick="deleteDebt('${debt.id}')">Delete</button>
                 </div>
             </div>
         `;
+        if (debt.id === editingId) li.classList.add('is-editing');
         list.appendChild(li);
     });
 
@@ -221,23 +228,86 @@ form.addEventListener('submit', (e) => {
         recurrence = { type: 'custom-days', days: Array.from(selectedDays) };
     }
 
-    const newDebt = {
-        id: crypto.randomUUID(),
-        entity: document.getElementById('entity').value,
-        amount: amountValue,
-        dueDate: document.getElementById('due-date').value,
-        reminderDate: document.getElementById('reminder-date').value || null,
-        reminderSent: false,
-        status: 'pending',
-        recurrence,
-        nextGenerated: false
-    };
+    const editingDebt = editingId ? debts.find(d => d.id === editingId) : null;
 
-    debts.push(newDebt);
+    if (editingDebt) {
+        // Actualiza la deuda existente en lugar de crear una nueva
+        editingDebt.entity = document.getElementById('entity').value;
+        editingDebt.amount = amountValue;
+        editingDebt.dueDate = document.getElementById('due-date').value;
+        editingDebt.reminderDate = document.getElementById('reminder-date').value || null;
+        editingDebt.reminderSent = false; // si cambió la fecha, permite que vuelva a avisar
+        editingDebt.recurrence = recurrence;
+    } else {
+        debts.push({
+            id: crypto.randomUUID(),
+            entity: document.getElementById('entity').value,
+            amount: amountValue,
+            dueDate: document.getElementById('due-date').value,
+            reminderDate: document.getElementById('reminder-date').value || null,
+            reminderSent: false,
+            status: 'pending',
+            recurrence,
+            nextGenerated: false
+        });
+    }
+
     save();
     form.reset();
     customDaysField.hidden = true;
     resetDayPicker();
+    exitEditMode();
+});
+
+// --- MODO EDICIÓN ---
+function exitEditMode() {
+    editingId = null;
+    submitBtn.textContent = 'Add Debt';
+    cancelEditBtn.hidden = true;
+}
+
+window.editDebt = (id) => {
+    const debt = debts.find(d => d.id === id);
+    if (!debt) return;
+
+    editingId = id;
+
+    document.getElementById('entity').value = debt.entity;
+    document.getElementById('amount').value = debt.amount;
+    document.getElementById('due-date').value = debt.dueDate;
+    document.getElementById('reminder-date').value = debt.reminderDate || '';
+
+    resetDayPicker();
+    if (debt.recurrence && debt.recurrence.type === 'monthly') {
+        repeatsSelect.value = 'monthly';
+        customDaysField.hidden = true;
+    } else if (debt.recurrence && debt.recurrence.type === 'custom-days') {
+        repeatsSelect.value = 'custom-days';
+        customDaysField.hidden = false;
+        debt.recurrence.days.forEach(d => {
+            selectedDays.add(d);
+            const btn = dayPicker.querySelector(`button[data-day="${d}"]`);
+            if (btn) btn.classList.add('selected');
+        });
+    } else {
+        repeatsSelect.value = 'none';
+        customDaysField.hidden = true;
+    }
+
+    submitBtn.textContent = 'Guardar cambios';
+    cancelEditBtn.hidden = false;
+
+    render(); // resalta el renglón en edición
+    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('entity').focus();
+};
+
+cancelEditBtn.addEventListener('click', () => {
+    form.reset();
+    customDaysField.hidden = true;
+    resetDayPicker();
+    exitEditMode();
+    render();
 });
 
 window.togglePaid = (id) => {

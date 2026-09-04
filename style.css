@@ -169,6 +169,24 @@ body {
 .btn-stamp:active { transform: scale(0.96) rotate(-1deg); }
 .btn-stamp:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
 
+.form-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.btn-cancel-edit {
+    background: none;
+    border: none;
+    color: var(--ink-soft);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 0.82rem;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+}
+.btn-cancel-edit:hover { color: var(--debit); }
+
 /* --- Lista de renglones --- */
 .ledger-list { list-style: none; }
 
@@ -182,6 +200,7 @@ body {
     position: relative;
 }
 .ledger-row:last-child { border-bottom: none; }
+.ledger-row.is-editing { background: rgba(184, 145, 47, 0.08); }
 
 .row-main .entity {
     font-family: 'Fraunces', serif;
@@ -260,6 +279,7 @@ body {
 }
 .row-actions button:hover { color: var(--ink); }
 .row-actions .link-del:hover { color: var(--debit); }
+.row-actions .link-edit:hover { color: var(--brass); }
 
 /* --- Sello de "PAID" para deudas saldadas --- */
 .ledger-row.is-paid::before {
