@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Debts</title>
+
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#14202B">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon.png">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="cover">
+        <button id="btn-clear-cache" class="tab-refresh" type="button" title="Forzar actualización de la app" aria-label="Actualizar app">↻</button>
+
+        <header class="cover-header">
+            <h1>My Debts</h1>
+            <div class="balance-line">
+                <span class="balance-label">Balance owed</span>
+                <span id="total-owed" class="balance-amount">$0.00</span>
+            </div>
+        </header>
+
+        <main class="paper">
+            <form id="debt-form" class="ledger-entry">
+                <div class="field">
+                    <input type="text" id="entity" placeholder="Who do you owe?" required>
+                </div>
+
+                <div class="field field--amount">
+                    <span class="currency" aria-hidden="true">$</span>
+                    <input type="number" id="amount" placeholder="0.00" step="0.01" min="0" required>
+                </div>
+
+                <div class="field-row">
+                    <div class="field field--small">
+                        <label for="due-date">Due</label>
+                        <input type="date" id="due-date" required>
+                    </div>
+                    <div class="field field--small">
+                        <label for="reminder-date">Remind</label>
+                        <input type="datetime-local" id="reminder-date">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="repeats">Repeats</label>
+                    <select id="repeats">
+                        <option value="none">No se repite</option>
+                        <option value="monthly">Mensual (mismo día)</option>
+                        <option value="custom-days">Fechas fijas del mes (tú eliges)</option>
+                    </select>
+                </div>
+
+                <div class="field" id="custom-days-field" hidden>
+                    <label>Días del mes</label>
+                    <div class="day-picker" id="day-picker"></div>
+                </div>
+
+                <button type="submit" class="btn-stamp">Add Debt</button>
+            </form>
+
+            <ul id="debt-list" class="ledger-list"></ul>
+        </main>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

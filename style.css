@@ -1,0 +1,295 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+    /* Cubierta del libro (fondo de la página) */
+    --cover-bg: #16232F;
+    --cover-bg-deep: #0D161E;
+    --cover-text: #EFE6D4;
+    --cover-text-muted: #9CA9B3;
+
+    /* Hoja de contabilidad */
+    --paper: #F2E8D5;
+    --paper-line: #D9C7A0;
+    --paper-line-soft: #E4D6B4;
+
+    /* Tinta */
+    --ink: #241C15;
+    --ink-soft: #7A6B52;
+    --debit: #8C2E2E;
+    --credit: #3D6B4F;
+    --brass: #B8912F;
+
+    --radius: 3px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background:
+        radial-gradient(ellipse at top, var(--cover-bg) 0%, var(--cover-bg-deep) 100%);
+    color: var(--cover-text);
+    min-height: 100vh;
+}
+
+.cover {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 1.75rem 1.25rem 3rem;
+    position: relative;
+}
+
+/* --- Botón de actualizar: pestaña discreta en la esquina --- */
+.tab-refresh {
+    position: absolute;
+    top: 1.25rem;
+    right: 1.25rem;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    border: 1px solid rgba(239, 230, 212, 0.25);
+    background: transparent;
+    color: var(--cover-text-muted);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: transform 0.3s ease, border-color 0.2s ease;
+}
+.tab-refresh:active { transform: rotate(180deg); border-color: var(--brass); }
+
+/* --- Encabezado sobre la cubierta --- */
+.cover-header {
+    text-align: center;
+    margin-bottom: 1.75rem;
+}
+
+.cover-header h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 2.75rem;
+    letter-spacing: -0.01em;
+    color: var(--cover-text);
+}
+
+.balance-line {
+    margin-top: 0.85rem;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.6rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid rgba(184, 145, 47, 0.4);
+}
+
+.balance-label {
+    font-size: 0.85rem;
+    color: var(--cover-text-muted);
+}
+
+.balance-amount {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 1.35rem;
+    color: var(--brass);
+}
+
+/* --- La hoja de papel --- */
+.paper {
+    background: var(--paper);
+    border-radius: var(--radius);
+    padding: 1.5rem 1.35rem 0.5rem;
+    box-shadow:
+        0 1px 2px rgba(0,0,0,0.3),
+        0 18px 40px -12px rgba(0,0,0,0.55);
+    color: var(--ink);
+}
+
+/* --- Formulario tipo renglón de libro contable --- */
+.ledger-entry {
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px dashed var(--paper-line);
+    margin-bottom: 1.25rem;
+}
+
+.field { position: relative; }
+
+.field label {
+    display: block;
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    margin-bottom: 0.3rem;
+}
+
+.field input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 1.5px solid var(--paper-line);
+    padding: 0.4rem 0.1rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 1rem;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+.field input::placeholder { color: #A6957A; }
+.field input:focus { border-bottom-color: var(--brass); }
+.field input:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+.field--amount { display: flex; align-items: baseline; gap: 0.4rem; }
+.field--amount .currency {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.05rem;
+    color: var(--ink-soft);
+}
+.field--amount input {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.05rem;
+}
+
+.field-row { display: flex; gap: 1rem; }
+.field-row .field { flex: 1; }
+.field-row input { font-size: 0.9rem; }
+
+.btn-stamp {
+    align-self: flex-start;
+    background: var(--cover-bg);
+    color: var(--paper);
+    border: 1px solid var(--brass);
+    border-radius: var(--radius);
+    padding: 0.65rem 1.4rem;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: transform 0.12s ease;
+}
+.btn-stamp:active { transform: scale(0.96) rotate(-1deg); }
+.btn-stamp:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+/* --- Lista de renglones --- */
+.ledger-list { list-style: none; }
+
+.ledger-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--paper-line-soft);
+    position: relative;
+}
+.ledger-row:last-child { border-bottom: none; }
+
+.row-main .entity {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 1.05rem;
+    color: var(--ink);
+}
+.row-main .due {
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    margin-top: 0.2rem;
+}
+
+.recur-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.2rem;
+    margin-left: 0.4rem;
+    color: var(--brass);
+    font-size: 0.72rem;
+}
+
+#custom-days-field[hidden] { display: none; }
+
+.day-picker {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.35rem;
+}
+
+.day-picker button {
+    aspect-ratio: 1;
+    border: 1px solid var(--paper-line);
+    background: transparent;
+    border-radius: 2px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+.day-picker button:hover { border-color: var(--brass); }
+.day-picker button.selected {
+    background: var(--cover-bg);
+    border-color: var(--brass);
+    color: var(--paper);
+    font-weight: 600;
+}
+.day-picker button:focus-visible { outline: 2px solid var(--brass); outline-offset: 1px; }
+
+.row-amount { text-align: right; flex-shrink: 0; }
+.row-amount .amount {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 1.05rem;
+    color: var(--debit);
+}
+.ledger-row.is-paid .row-amount .amount { color: var(--credit); }
+
+.row-actions {
+    margin-top: 0.4rem;
+    display: flex;
+    gap: 0.6rem;
+    justify-content: flex-end;
+}
+.row-actions button {
+    background: none;
+    border: none;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    cursor: pointer;
+    padding: 0.15rem;
+}
+.row-actions button:hover { color: var(--ink); }
+.row-actions .link-del:hover { color: var(--debit); }
+
+/* --- Sello de "PAID" para deudas saldadas --- */
+.ledger-row.is-paid::before {
+    content: 'PAID';
+    position: absolute;
+    left: -0.4rem;
+    top: 0.6rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.08em;
+    color: var(--credit);
+    border: 1.5px solid var(--credit);
+    border-radius: 2px;
+    padding: 0.05rem 0.3rem;
+    transform: rotate(-8deg);
+    opacity: 0.85;
+    animation: stamp-in 0.25s ease-out;
+}
+.ledger-row.is-paid .row-main { padding-left: 3.1rem; }
+
+@keyframes stamp-in {
+    from { transform: rotate(-8deg) scale(1.6); opacity: 0; }
+    to { transform: rotate(-8deg) scale(1); opacity: 0.85; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+}
+
+@media (max-width: 380px) {
+    .cover-header h1 { font-size: 2.25rem; }
+    .field-row { flex-direction: column; gap: 1.1rem; }
+}
