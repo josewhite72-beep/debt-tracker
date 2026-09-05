@@ -163,6 +163,7 @@ function checkReminders() {
         }
     });
     save(false); // persistimos reminderSent sin re-renderizar innecesariamente
+    checkCardReminders();
 }
 
 // --- RENDERING ---
@@ -396,6 +397,108 @@ try {
     expenses = [];
 }
 
+// --- CONFIGURACIÓN DE TARJETAS: fecha de corte + fecha del último pago ---
+// "Debo en la tarjeta" = suma de gastos con esa tarjeta desde la última vez
+// marcada como pagada (o desde siempre, si nunca se ha marcado).
+let cardsConfig = {};
+try {
+    cardsConfig = JSON.parse(localStorage.getItem('cardsConfig')) || {};
+} catch (err) {
+    console.error('cardsConfig corrupto en localStorage, reiniciando:', err);
+    cardsConfig = {};
+}
+['Bgral', 'StG99', 'Globank'].forEach(name => {
+    if (!cardsConfig[name]) {
+        cardsConfig[name] = { cutoffDay: null, lastPaymentDate: null, lastReminderCycle: null };
+    }
+});
+
+function saveCardsConfig() {
+    localStorage.setItem('cardsConfig', JSON.stringify(cardsConfig));
+}
+
+function cardBalance(cardName) {
+    const cfg = cardsConfig[cardName];
+    const since = cfg.lastPaymentDate ? parseDateStr(cfg.lastPaymentDate) : null;
+    return expenses
+        .filter(e => e.card === cardName && (!since || parseDateStr(e.date) > since))
+        .reduce((sum, e) => sum + e.amount, 0);
+}
+
+// Notificación un día antes de la fecha de corte de cada tarjeta.
+// Se apoya en el mismo intervalo de 60s que ya revisa los recordatorios de deudas.
+function checkCardReminders() {
+    if (Notification.permission !== 'granted') return;
+    const now = new Date();
+    const todayStr = formatDateStr(now);
+
+    Object.entries(cardsConfig).forEach(([cardName, cfg]) => {
+        if (!cfg.cutoffDay) return;
+
+        const cutoffDate = new Date(now.getFullYear(), now.getMonth(), clampDay(now.getFullYear(), now.getMonth(), cfg.cutoffDay));
+        const reminderDate = new Date(cutoffDate);
+        reminderDate.setDate(reminderDate.getDate() - 1);
+
+        const cycleKey = `${now.getFullYear()}-${now.getMonth()}`;
+        if (todayStr === formatDateStr(reminderDate) && cfg.lastReminderCycle !== cycleKey) {
+            new Notification(`Corte de ${cardName} mañana`, {
+                body: `Mañana es la fecha de corte de ${cardName}. Saldo actual: $${cardBalance(cardName).toFixed(2)}.`,
+                tag: `card-cutoff-${cardName}`
+            });
+            cfg.lastReminderCycle = cycleKey;
+            saveCardsConfig();
+        }
+    });
+}
+
+const cardButtons = document.querySelectorAll('.card-btn');
+const cardDetail = document.getElementById('card-detail');
+const cardDetailAmount = document.getElementById('card-detail-amount');
+const cardDetailName = document.getElementById('card-detail-name');
+const cardDetailMeta = document.getElementById('card-detail-meta');
+const cardCutoffInput = document.getElementById('card-cutoff-day');
+const cardMarkPaidBtn = document.getElementById('card-mark-paid-btn');
+let selectedCard = null;
+
+function renderCardDetail() {
+    if (!selectedCard) {
+        cardDetail.hidden = true;
+        return;
+    }
+    const cfg = cardsConfig[selectedCard];
+    cardDetail.hidden = false;
+    cardDetailName.textContent = selectedCard;
+    cardDetailAmount.textContent = `$${cardBalance(selectedCard).toFixed(2)}`;
+    cardCutoffInput.value = cfg.cutoffDay || '';
+    cardDetailMeta.textContent = cfg.lastPaymentDate
+        ? `Última vez marcada como pagada: ${cfg.lastPaymentDate}`
+        : 'Aún no se ha marcado como pagada.';
+}
+
+cardButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+        const card = btn.dataset.card;
+        selectedCard = selectedCard === card ? null : card; // toca de nuevo para cerrar
+        cardButtons.forEach(b => b.classList.toggle('active', b.dataset.card === selectedCard));
+        renderCardDetail();
+    });
+});
+
+cardCutoffInput.addEventListener('change', () => {
+    if (!selectedCard) return;
+    const val = parseInt(cardCutoffInput.value, 10);
+    cardsConfig[selectedCard].cutoffDay = Number.isNaN(val) ? null : Math.min(Math.max(val, 1), 31);
+    saveCardsConfig();
+});
+
+cardMarkPaidBtn.addEventListener('click', () => {
+    if (!selectedCard) return;
+    if (!confirm(`¿Marcar ${selectedCard} como pagada hoy? El saldo pendiente quedará en $0 a partir de hoy.`)) return;
+    cardsConfig[selectedCard].lastPaymentDate = formatDateStr(new Date());
+    saveCardsConfig();
+    renderCardDetail();
+});
+
 const expenseForm = document.getElementById('expense-form');
 const expenseList = document.getElementById('expense-list');
 const expenseCategorySelect = document.getElementById('expense-category');
@@ -426,6 +529,7 @@ expenseCardSelect.value = CATEGORY_META[expenseCategorySelect.value].defaultCard
 function saveExpenses() {
     localStorage.setItem('expenses', JSON.stringify(expenses));
     renderExpenses();
+    renderCardDetail();
 }
 
 function expensesForViewedMonth() {
@@ -569,6 +673,7 @@ nextMonthBtn.addEventListener('click', () => {
 });
 
 renderExpenses();
+renderCardDetail();
 
 // --- INIT ---
 render();

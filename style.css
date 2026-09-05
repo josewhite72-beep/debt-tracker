@@ -205,6 +205,61 @@ body {
 .card-tag[data-card="StG99"] { background: var(--card-stg99); }
 .card-tag[data-card="Globank"] { background: var(--card-globank); }
 
+/* --- Botones "cuánto debo por tarjeta" --- */
+.cards-overview { margin-bottom: 1.5rem; }
+
+.card-buttons {
+    display: flex;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+}
+
+.card-btn {
+    flex: 1;
+    padding: 0.6rem;
+    border-radius: 4px;
+    border: 1.5px solid var(--paper-line);
+    background: transparent;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.card-btn:hover { border-color: var(--brass); }
+.card-btn:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.card-btn.active[data-card="Bgral"] { background: var(--card-bgral); border-color: var(--card-bgral); color: var(--paper); }
+.card-btn.active[data-card="StG99"] { background: var(--card-stg99); border-color: var(--card-stg99); color: var(--paper); }
+.card-btn.active[data-card="Globank"] { background: var(--card-globank); border-color: var(--card-globank); color: var(--paper); }
+
+.card-detail {
+    background: rgba(184, 145, 47, 0.08);
+    border: 1px solid var(--paper-line);
+    border-radius: 4px;
+    padding: 1rem 1.1rem;
+}
+.card-detail[hidden] { display: none; }
+
+.card-detail-balance {
+    font-family: 'Fraunces', serif;
+    font-size: 1.1rem;
+    margin-bottom: 0.85rem;
+}
+.card-detail-balance #card-detail-amount {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 700;
+    color: var(--debit);
+}
+
+.card-detail-actions { margin-top: 0.85rem; }
+
+.card-detail-meta {
+    font-size: 0.72rem;
+    color: var(--ink-soft);
+    margin-top: 0.5rem;
+}
+
 /* --- La hoja de papel --- */
 .paper {
     background: var(--paper);

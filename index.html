@@ -78,6 +78,25 @@
 
         <!-- ===================== PESTAÑA: GASTOS ===================== -->
         <main class="paper tab-panel" id="tab-expenses" hidden>
+            <div class="cards-overview">
+                <div class="card-buttons">
+                    <button type="button" class="card-btn" data-card="Bgral">Bgral</button>
+                    <button type="button" class="card-btn" data-card="StG99">StG99</button>
+                    <button type="button" class="card-btn" data-card="Globank">Globank</button>
+                </div>
+                <div class="card-detail" id="card-detail" hidden>
+                    <p class="card-detail-balance">Debes <span id="card-detail-amount">$0.00</span> en <span id="card-detail-name"></span></p>
+                    <div class="field field--small">
+                        <label for="card-cutoff-day">Fecha de corte (día del mes)</label>
+                        <input type="number" id="card-cutoff-day" min="1" max="31" placeholder="ej. 22">
+                    </div>
+                    <div class="card-detail-actions">
+                        <button type="button" id="card-mark-paid-btn" class="btn-cancel-edit">Marcar tarjeta como pagada</button>
+                    </div>
+                    <p class="card-detail-meta" id="card-detail-meta"></p>
+                </div>
+            </div>
+
             <form id="expense-form" class="ledger-entry">
                 <div class="field-row">
                     <div class="field">
