@@ -344,6 +344,23 @@ window.deleteDebt = (id) => {
     }
 };
 
+// --- PESTAÑAS: DEUDAS / GASTOS ---
+const tabButtons = document.querySelectorAll('.tab-btn');
+const tabPanels = {
+    debts: document.getElementById('tab-debts'),
+    expenses: document.getElementById('tab-expenses')
+};
+tabButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+        tabButtons.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+        Object.entries(tabPanels).forEach(([key, panel]) => {
+            panel.hidden = key !== btn.dataset.tab;
+        });
+    });
+});
+
 // --- BOTÓN DE ACTUALIZAR / LIMPIAR CACHÉ ---
 // Fix #1 (parte cliente): permite forzar la baja de la versión cacheada
 // sin esperar a que expire, útil mientras iteras rápido en el SW network-first.
@@ -358,6 +375,200 @@ btnClearCache.addEventListener('click', async () => {
     }
     location.reload();
 });
+
+// ============================================================
+// ================== GASTOS (Alimentos, Gasolina, Servicios) ===
+// ============================================================
+const CATEGORY_META = {
+    alimentos:   { label: 'Alimentos',              defaultCard: 'StG99' },
+    gasolina:    { label: 'Gasolina',                defaultCard: 'Globank' },
+    agua:        { label: 'Agua',                    defaultCard: 'Bgral' },
+    luz:         { label: 'Naturgy (luz)',            defaultCard: 'Bgral' },
+    internet_tv: { label: 'Masmovil (internet/TV)',   defaultCard: 'Bgral' },
+    data:        { label: 'Masmovil (data)',          defaultCard: 'Bgral' }
+};
+
+let expenses = [];
+try {
+    expenses = JSON.parse(localStorage.getItem('expenses')) || [];
+} catch (err) {
+    console.error('expenses corrupto en localStorage, reiniciando lista:', err);
+    expenses = [];
+}
+
+const expenseForm = document.getElementById('expense-form');
+const expenseList = document.getElementById('expense-list');
+const expenseCategorySelect = document.getElementById('expense-category');
+const expenseCardSelect = document.getElementById('expense-card');
+const expenseSubmitBtn = document.getElementById('expense-submit-btn');
+const expenseCancelEditBtn = document.getElementById('expense-cancel-edit-btn');
+const prevMonthBtn = document.getElementById('prev-month');
+const nextMonthBtn = document.getElementById('next-month');
+const currentMonthLabel = document.getElementById('current-month-label');
+const summaryByCard = document.getElementById('summary-by-card');
+const summaryByCategory = document.getElementById('summary-by-category');
+
+let editingExpenseId = null;
+let viewedMonth = new Date(); // primer día del mes que se está viendo
+viewedMonth.setDate(1);
+
+const MONTH_FORMATTER = new Intl.DateTimeFormat('es', { month: 'long', year: 'numeric' });
+
+document.getElementById('expense-date').value = formatDateStr(new Date());
+
+// Autocompleta la tarjeta sugerida al elegir el rubro (editable después)
+expenseCategorySelect.addEventListener('change', () => {
+    const meta = CATEGORY_META[expenseCategorySelect.value];
+    if (meta) expenseCardSelect.value = meta.defaultCard;
+});
+expenseCardSelect.value = CATEGORY_META[expenseCategorySelect.value].defaultCard;
+
+function saveExpenses() {
+    localStorage.setItem('expenses', JSON.stringify(expenses));
+    renderExpenses();
+}
+
+function expensesForViewedMonth() {
+    const y = viewedMonth.getFullYear();
+    const m = viewedMonth.getMonth();
+    return expenses.filter(e => {
+        const d = parseDateStr(e.date);
+        return d.getFullYear() === y && d.getMonth() === m;
+    });
+}
+
+function renderExpenses() {
+    currentMonthLabel.textContent = MONTH_FORMATTER.format(viewedMonth);
+
+    const monthExpenses = expensesForViewedMonth()
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    // --- Resúmenes ---
+    const totalsByCard = {};
+    const totalsByCategory = {};
+    monthExpenses.forEach(e => {
+        totalsByCard[e.card] = (totalsByCard[e.card] || 0) + e.amount;
+        totalsByCategory[e.category] = (totalsByCategory[e.category] || 0) + e.amount;
+    });
+
+    summaryByCard.innerHTML = Object.keys(totalsByCard).length
+        ? Object.entries(totalsByCard)
+            .sort((a, b) => b[1] - a[1])
+            .map(([card, total]) => `<li><span>${card}</span><span class="summary-amount">$${total.toFixed(2)}</span></li>`)
+            .join('')
+        : '<li class="summary-empty">Sin gastos este mes</li>';
+
+    summaryByCategory.innerHTML = Object.keys(totalsByCategory).length
+        ? Object.entries(totalsByCategory)
+            .sort((a, b) => b[1] - a[1])
+            .map(([cat, total]) => `<li><span>${CATEGORY_META[cat].label}</span><span class="summary-amount">$${total.toFixed(2)}</span></li>`)
+            .join('')
+        : '<li class="summary-empty">Sin gastos este mes</li>';
+
+    // --- Lista de renglones ---
+    expenseList.innerHTML = '';
+    monthExpenses.forEach(e => {
+        const li = document.createElement('li');
+        li.className = 'ledger-row';
+        if (e.id === editingExpenseId) li.classList.add('is-editing');
+
+        li.innerHTML = `
+            <div class="row-main">
+                <h3 class="entity">${CATEGORY_META[e.category].label}<span class="card-tag" data-card="${e.card}">${e.card}</span></h3>
+                <p class="due">${e.date}${e.note ? ' · ' + e.note : ''}</p>
+            </div>
+            <div class="row-amount">
+                <span class="amount">$${e.amount.toFixed(2)}</span>
+                <div class="row-actions">
+                    <button class="link-edit" onclick="editExpense('${e.id}')">Editar</button>
+                    <button class="link-del" onclick="deleteExpense('${e.id}')">Delete</button>
+                </div>
+            </div>
+        `;
+        expenseList.appendChild(li);
+    });
+}
+
+expenseForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const amountValue = parseFloat(document.getElementById('expense-amount').value);
+    if (Number.isNaN(amountValue)) {
+        alert('Monto inválido.');
+        return;
+    }
+
+    const data = {
+        category: expenseCategorySelect.value,
+        card: expenseCardSelect.value,
+        amount: amountValue,
+        date: document.getElementById('expense-date').value,
+        note: document.getElementById('expense-note').value || null
+    };
+
+    if (editingExpenseId) {
+        const existing = expenses.find(x => x.id === editingExpenseId);
+        Object.assign(existing, data);
+    } else {
+        expenses.push({ id: crypto.randomUUID(), ...data });
+    }
+
+    saveExpenses();
+    expenseForm.reset();
+    document.getElementById('expense-date').value = formatDateStr(new Date());
+    expenseCardSelect.value = CATEGORY_META[expenseCategorySelect.value].defaultCard;
+    exitExpenseEditMode();
+});
+
+function exitExpenseEditMode() {
+    editingExpenseId = null;
+    expenseSubmitBtn.textContent = 'Add Expense';
+    expenseCancelEditBtn.hidden = true;
+}
+
+window.editExpense = (id) => {
+    const expense = expenses.find(x => x.id === id);
+    if (!expense) return;
+
+    editingExpenseId = id;
+    expenseCategorySelect.value = expense.category;
+    expenseCardSelect.value = expense.card;
+    document.getElementById('expense-amount').value = expense.amount;
+    document.getElementById('expense-date').value = expense.date;
+    document.getElementById('expense-note').value = expense.note || '';
+
+    expenseSubmitBtn.textContent = 'Guardar cambios';
+    expenseCancelEditBtn.hidden = false;
+
+    renderExpenses();
+    expenseForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+expenseCancelEditBtn.addEventListener('click', () => {
+    expenseForm.reset();
+    document.getElementById('expense-date').value = formatDateStr(new Date());
+    expenseCardSelect.value = CATEGORY_META[expenseCategorySelect.value].defaultCard;
+    exitExpenseEditMode();
+    renderExpenses();
+});
+
+window.deleteExpense = (id) => {
+    if (confirm('Delete this expense?')) {
+        expenses = expenses.filter(x => x.id !== id);
+        saveExpenses();
+    }
+};
+
+prevMonthBtn.addEventListener('click', () => {
+    viewedMonth.setMonth(viewedMonth.getMonth() - 1);
+    renderExpenses();
+});
+nextMonthBtn.addEventListener('click', () => {
+    viewedMonth.setMonth(viewedMonth.getMonth() + 1);
+    renderExpenses();
+});
+
+renderExpenses();
 
 // --- INIT ---
 render();

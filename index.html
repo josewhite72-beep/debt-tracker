@@ -25,7 +25,13 @@
             </div>
         </header>
 
-        <main class="paper">
+        <nav class="tab-bar" role="tablist">
+            <button class="tab-btn active" data-tab="debts" role="tab" aria-selected="true">Deudas</button>
+            <button class="tab-btn" data-tab="expenses" role="tab" aria-selected="false">Gastos</button>
+        </nav>
+
+        <!-- ===================== PESTAÑA: DEUDAS ===================== -->
+        <main class="paper tab-panel active" id="tab-debts">
             <form id="debt-form" class="ledger-entry">
                 <div class="field">
                     <input type="text" id="entity" placeholder="Who do you owe?" required>
@@ -68,6 +74,75 @@
             </form>
 
             <ul id="debt-list" class="ledger-list"></ul>
+        </main>
+
+        <!-- ===================== PESTAÑA: GASTOS ===================== -->
+        <main class="paper tab-panel" id="tab-expenses" hidden>
+            <form id="expense-form" class="ledger-entry">
+                <div class="field-row">
+                    <div class="field">
+                        <label for="expense-category">Rubro</label>
+                        <select id="expense-category">
+                            <option value="alimentos">Alimentos</option>
+                            <option value="gasolina">Gasolina</option>
+                            <optgroup label="Servicios">
+                                <option value="agua">Agua</option>
+                                <option value="luz">Naturgy (luz)</option>
+                                <option value="internet_tv">Masmovil (internet/TV)</option>
+                                <option value="data">Masmovil (data)</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="expense-card">Tarjeta</label>
+                        <select id="expense-card">
+                            <option value="Bgral">Bgral</option>
+                            <option value="StG99">StG99</option>
+                            <option value="Globank">Globank</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field field--amount">
+                    <span class="currency" aria-hidden="true">$</span>
+                    <input type="number" id="expense-amount" placeholder="0.00" step="0.01" min="0" required>
+                </div>
+
+                <div class="field-row">
+                    <div class="field field--small">
+                        <label for="expense-date">Fecha</label>
+                        <input type="date" id="expense-date" required>
+                    </div>
+                    <div class="field field--small">
+                        <label for="expense-note">Nota (opcional)</label>
+                        <input type="text" id="expense-note" placeholder="ej. Súper Rey">
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-stamp" id="expense-submit-btn">Add Expense</button>
+                    <button type="button" class="btn-cancel-edit" id="expense-cancel-edit-btn" hidden>Cancelar edición</button>
+                </div>
+            </form>
+
+            <div class="month-nav">
+                <button type="button" id="prev-month" aria-label="Mes anterior">←</button>
+                <span id="current-month-label"></span>
+                <button type="button" id="next-month" aria-label="Mes siguiente">→</button>
+            </div>
+
+            <div class="summary-grid">
+                <div class="summary-block">
+                    <h4>Por tarjeta</h4>
+                    <ul id="summary-by-card" class="summary-list"></ul>
+                </div>
+                <div class="summary-block">
+                    <h4>Por rubro</h4>
+                    <ul id="summary-by-category" class="summary-list"></ul>
+                </div>
+            </div>
+
+            <ul id="expense-list" class="ledger-list"></ul>
         </main>
     </div>
 
