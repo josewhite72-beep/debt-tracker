@@ -73,7 +73,25 @@
                 </div>
             </form>
 
-            <ul id="debt-list" class="ledger-list"></ul>
+            <div class="view-toggle">
+                <button type="button" class="view-toggle-btn active" data-view="list">Lista</button>
+                <button type="button" class="view-toggle-btn" data-view="calendar">Calendario</button>
+            </div>
+
+            <ul id="debt-list" class="ledger-list" data-view-panel="list"></ul>
+
+            <div id="debt-calendar-view" class="calendar-view" data-view-panel="calendar" hidden>
+                <div class="month-nav">
+                    <button type="button" id="debt-prev-month" aria-label="Mes anterior">←</button>
+                    <span id="debt-current-month-label"></span>
+                    <button type="button" id="debt-next-month" aria-label="Mes siguiente">→</button>
+                </div>
+                <div class="calendar-weekdays">
+                    <span>D</span><span>L</span><span>M</span><span>M</span><span>J</span><span>V</span><span>S</span>
+                </div>
+                <div class="calendar-grid" id="debt-calendar-grid"></div>
+                <div class="calendar-day-detail" id="calendar-day-detail" hidden></div>
+            </div>
         </main>
 
         <!-- ===================== PESTAÑA: GASTOS ===================== -->

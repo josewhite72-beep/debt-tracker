@@ -496,3 +496,95 @@ body {
     .cover-header h1 { font-size: 2.25rem; }
     .field-row { flex-direction: column; gap: 1.1rem; }
 }
+
+/* --- Toggle Lista / Calendario (pestaña Deudas) --- */
+.view-toggle {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.1rem;
+}
+
+.view-toggle-btn {
+    flex: 1;
+    padding: 0.5rem;
+    border-radius: 4px;
+    border: 1.5px solid var(--paper-line);
+    background: transparent;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--ink-soft);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.view-toggle-btn:hover { border-color: var(--brass); }
+.view-toggle-btn:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.view-toggle-btn.active {
+    background: var(--cover-bg);
+    border-color: var(--cover-bg);
+    color: var(--paper);
+}
+
+[data-view-panel][hidden] { display: none; }
+
+/* --- Vista de calendario --- */
+.calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-size: 0.68rem;
+    color: var(--ink-soft);
+    margin-bottom: 0.4rem;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0.3rem;
+    margin-bottom: 1rem;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.1rem;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    background: rgba(36, 28, 21, 0.03);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.78rem;
+    color: var(--ink);
+    cursor: default;
+    position: relative;
+}
+.calendar-day.is-empty { background: none; }
+.calendar-day.is-today { border-color: var(--brass); font-weight: 700; }
+
+.calendar-day.has-debt { cursor: pointer; }
+.calendar-day.has-debt:hover { background: rgba(184, 145, 47, 0.15); }
+
+.calendar-day .day-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--debit);
+}
+.calendar-day.all-paid .day-dot { background: var(--credit); }
+
+.calendar-day.selected { background: rgba(184, 145, 47, 0.25); border-color: var(--brass); }
+
+.calendar-day-detail {
+    border-top: 1px dashed var(--paper-line);
+    padding-top: 0.9rem;
+}
+.calendar-day-detail[hidden] { display: none; }
+.calendar-day-detail h4 {
+    font-family: 'Fraunces', serif;
+    font-size: 0.95rem;
+    margin-bottom: 0.6rem;
+    color: var(--ink-soft);
+}
+.calendar-day-detail .ledger-row { padding: 0.6rem 0; }

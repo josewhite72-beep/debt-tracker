@@ -199,6 +199,8 @@ function render() {
     });
 
     totalEl.textContent = `Total Owed: $${total.toFixed(2)}`;
+
+    if (typeof renderDebtCalendar === 'function') renderDebtCalendar();
 }
 
 // --- ACTIONS ---
@@ -674,6 +676,127 @@ nextMonthBtn.addEventListener('click', () => {
 
 renderExpenses();
 renderCardDetail();
+
+// ============================================================
+// ================== VISTA CALENDARIO (pestaña Deudas) ========
+// ============================================================
+// Muestra solo las deudas que ya existen como registros reales — no proyecta
+// las próximas ocurrencias de una deuda recurrente hasta que esa ocurrencia
+// se genera de verdad (al marcar la anterior como pagada). Así el calendario
+// siempre coincide exactamente con lo que ves en la vista de Lista.
+const viewToggleButtons = document.querySelectorAll('.view-toggle-btn');
+const debtListEl = document.getElementById('debt-list');
+const debtCalendarView = document.getElementById('debt-calendar-view');
+const debtCalendarGrid = document.getElementById('debt-calendar-grid');
+const debtCurrentMonthLabel = document.getElementById('debt-current-month-label');
+const debtPrevMonthBtn = document.getElementById('debt-prev-month');
+const debtNextMonthBtn = document.getElementById('debt-next-month');
+const calendarDayDetail = document.getElementById('calendar-day-detail');
+
+let debtCalendarMonth = new Date();
+debtCalendarMonth.setDate(1);
+let selectedCalendarDay = null; // 'YYYY-MM-DD' del día seleccionado, o null
+
+viewToggleButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+        viewToggleButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const view = btn.dataset.view;
+        debtListEl.hidden = view !== 'list';
+        debtCalendarView.hidden = view !== 'calendar';
+        if (view === 'calendar') renderDebtCalendar();
+    });
+});
+
+function debtsOnDate(dateStr) {
+    return debts.filter(d => d.dueDate === dateStr);
+}
+
+function renderDebtCalendar() {
+    if (!debtCalendarGrid || debtCalendarView.hidden) return;
+
+    debtCurrentMonthLabel.textContent = MONTH_FORMATTER.format(debtCalendarMonth);
+
+    const year = debtCalendarMonth.getFullYear();
+    const month = debtCalendarMonth.getMonth();
+    const firstWeekday = new Date(year, month, 1).getDay(); // 0=domingo
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const todayStr = formatDateStr(new Date());
+
+    debtCalendarGrid.innerHTML = '';
+
+    // Celdas vacías de relleno antes del día 1
+    for (let i = 0; i < firstWeekday; i++) {
+        const empty = document.createElement('div');
+        empty.className = 'calendar-day is-empty';
+        debtCalendarGrid.appendChild(empty);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = formatDateStr(new Date(year, month, day));
+        const dayDebts = debtsOnDate(dateStr);
+
+        const cell = document.createElement('div');
+        cell.className = 'calendar-day';
+        if (dateStr === todayStr) cell.classList.add('is-today');
+        if (dateStr === selectedCalendarDay) cell.classList.add('selected');
+
+        if (dayDebts.length > 0) {
+            cell.classList.add('has-debt');
+            const allPaid = dayDebts.every(d => d.status === 'paid');
+            if (allPaid) cell.classList.add('all-paid');
+            cell.innerHTML = `<span>${day}</span><span class="day-dot"></span>`;
+            cell.addEventListener('click', () => {
+                selectedCalendarDay = selectedCalendarDay === dateStr ? null : dateStr;
+                renderDebtCalendar();
+            });
+        } else {
+            cell.innerHTML = `<span>${day}</span>`;
+        }
+
+        debtCalendarGrid.appendChild(cell);
+    }
+
+    renderCalendarDayDetail();
+}
+
+function renderCalendarDayDetail() {
+    if (!selectedCalendarDay) {
+        calendarDayDetail.hidden = true;
+        calendarDayDetail.innerHTML = '';
+        return;
+    }
+
+    const dayDebts = debtsOnDate(selectedCalendarDay);
+    if (dayDebts.length === 0) {
+        calendarDayDetail.hidden = true;
+        return;
+    }
+
+    calendarDayDetail.hidden = false;
+    calendarDayDetail.innerHTML = `<h4>${selectedCalendarDay}</h4>` + dayDebts.map(debt => {
+        const isPaid = debt.status === 'paid';
+        return `
+            <div class="ledger-row${isPaid ? ' is-paid' : ''}">
+                <div class="row-main">
+                    <h3 class="entity">${debt.entity}</h3>
+                </div>
+                <div class="row-amount">
+                    <span class="amount">$${debt.amount.toFixed(2)}</span>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+debtPrevMonthBtn.addEventListener('click', () => {
+    debtCalendarMonth.setMonth(debtCalendarMonth.getMonth() - 1);
+    renderDebtCalendar();
+});
+debtNextMonthBtn.addEventListener('click', () => {
+    debtCalendarMonth.setMonth(debtCalendarMonth.getMonth() + 1);
+    renderDebtCalendar();
+});
 
 // --- INIT ---
 render();
